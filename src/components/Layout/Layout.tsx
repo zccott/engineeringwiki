@@ -5,23 +5,30 @@ import Drawer from "@mui/material/Drawer";
 import Toolbar from "@mui/material/Toolbar";
 import Header from "../Header/Header";
 import Sidebar, { SIDEBAR_WIDTH } from "../Sidebar/Sidebar";
+import { useDesignStyle } from "../../hooks/useDesignStyle";
 
 /**
  * App shell: fixed header, a permanent sidebar on desktop (md+) that
  * becomes a temporary Drawer on mobile, and the routed page content.
+ *
+ * When style === "minimal" the persistent sidebar is hidden at every
+ * breakpoint (no nav chrome) — the same Drawer is still reachable via the
+ * menu button in Header, it just isn't shown by default.
  */
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { style } = useDesignStyle();
+  const isMinimal = style === "minimal";
 
   return (
     <Box sx={{ display: "flex", minHeight: "100dvh" }}>
       <Header onMenuClick={() => setMobileOpen(true)} />
 
-      {/* Desktop: permanent sidebar */}
+      {/* Desktop: permanent sidebar (hidden entirely for the minimal style) */}
       <Box
         component="nav"
         sx={{
-          display: { xs: "none", md: "block" },
+          display: isMinimal ? "none" : { xs: "none", md: "block" },
           width: SIDEBAR_WIDTH,
           flexShrink: 0,
           borderRight: "1px solid",
@@ -36,14 +43,14 @@ export default function Layout() {
         <Sidebar />
       </Box>
 
-      {/* Mobile: temporary drawer */}
+      {/* Mobile (and minimal, at every breakpoint): temporary drawer */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         ModalProps={{ keepMounted: true }}
         sx={{
-          display: { xs: "block", md: "none" },
+          display: isMinimal ? "block" : { xs: "block", md: "none" },
           "& .MuiDrawer-paper": { width: SIDEBAR_WIDTH, boxSizing: "border-box" },
         }}
       >
@@ -55,7 +62,7 @@ export default function Layout() {
         sx={{
           flexGrow: 1,
           minWidth: 0,
-          ml: { xs: 0, md: `${SIDEBAR_WIDTH}px` },
+          ml: { xs: 0, md: isMinimal ? 0 : `${SIDEBAR_WIDTH}px` },
           px: { xs: 2, sm: 3, md: 4 },
           py: 3,
         }}

@@ -8,7 +8,21 @@ import { subjects, getTopic } from "../../content";
 import { subjectMeta } from "../../content/subjectMeta";
 import { useProgress } from "../../hooks/useProgress";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { useDesignStyle } from "../../hooks/useDesignStyle";
+import { getCardSx } from "../../theme/cardStyle";
 import type { ProgressStatus } from "../../types/content";
+
+/** Bento gets a feature tile every 5th card (spans 2x2) plus a wide tile
+ * (spans 2x1) — everything else falls back to a plain 1x1 tile. */
+function bentoSpan(index: number) {
+  if (index % 5 === 0) {
+    return { gridColumn: { xs: "auto", sm: "span 2" }, gridRow: { xs: "auto", sm: "span 2" } };
+  }
+  if (index % 5 === 3) {
+    return { gridColumn: { xs: "auto", sm: "span 2" } };
+  }
+  return {};
+}
 
 const STATUS_LABEL: Record<ProgressStatus, string> = {
   "not-started": "Not started",
@@ -20,6 +34,8 @@ const STATUS_LABEL: Record<ProgressStatus, string> = {
 export default function Home() {
   const navigate = useNavigate();
   const { getRecent, getStatus, getSubjectCompletion } = useProgress();
+  const { style } = useDesignStyle();
+  const isBento = style === "bento";
 
   useDocumentMeta({
     title: "EngineeringWiki — Learn once. Understand deeply.",
@@ -42,12 +58,13 @@ export default function Home() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+          gridTemplateColumns: { xs: "1fr", sm: isBento ? "repeat(4, 1fr)" : "repeat(3, 1fr)" },
+          gridAutoRows: isBento ? "minmax(160px, auto)" : undefined,
           gap: 2,
           mb: 6,
         }}
       >
-        {subjects.map((subject) => {
+        {subjects.map((subject, index) => {
           const meta = subjectMeta[subject.id];
           const Icon = meta.icon;
           const completion = getSubjectCompletion(subject.topics.map((t) => t.id));
@@ -55,14 +72,13 @@ export default function Home() {
           return (
             <Box
               key={subject.id}
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 2,
+              sx={(theme) => ({
+                ...getCardSx(style, theme),
+                ...(isBento ? bentoSpan(index) : null),
                 p: 3,
                 display: "flex",
                 flexDirection: "column",
-              }}
+              })}
             >
               <Icon sx={{ color: "primary.main", mb: 1.5 }} />
               <Typography variant="h2" component="h2" sx={{ mb: 0.75 }}>
@@ -107,10 +123,8 @@ export default function Home() {
                 <Box
                   key={`${entry.subjectId}/${entry.topicId}`}
                   onClick={() => navigate(`/${entry.subjectId}/${entry.topicId}`)}
-                  sx={{
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 1.5,
+                  sx={(theme) => ({
+                    ...getCardSx(style, theme),
                     p: 2,
                     display: "flex",
                     alignItems: "center",
@@ -118,7 +132,7 @@ export default function Home() {
                     gap: 2,
                     cursor: "pointer",
                     "&:hover": { borderColor: "primary.main" },
-                  }}
+                  })}
                 >
                   <Box sx={{ minWidth: 0 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
